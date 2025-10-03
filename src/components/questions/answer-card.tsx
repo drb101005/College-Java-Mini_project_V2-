@@ -35,6 +35,10 @@ export function AnswerCard({ answer, questionId, questionAuthorId, isAccepted }:
 
   const handleAcceptAnswer = async () => {
     if (!firestore) return;
+    if (!currentUser) {
+        toast({ title: 'Please log in to accept an answer.', variant: 'destructive'});
+        return;
+    }
     const questionRef = doc(firestore, 'questions', questionId);
     try {
       await updateDoc(questionRef, {

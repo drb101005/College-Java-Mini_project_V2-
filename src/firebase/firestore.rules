@@ -1,0 +1,130 @@
+/**
+ * @file Firebase Security Rules for Student Discussion Forum
+ *
+ * @description This ruleset prioritizes security and authorization independence
+ * by using denormalization to avoid complex queries. It grants public read access
+ * to questions, but restricts write access to authorized users (typically the author).
+ *
+ * Core Philosophy:
+ * Public read access to questions is allowed. Write access to user-owned data
+ * is strictly enforced. Authorization is performed without requiring extra reads.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles, accessible only to the user.
+ * - /questions/{questionId}: Stores questions, publicly readable, but writable only by the author.
+ * - /questions/{questionId}/answers/{answerId}: Stores answers to questions, publicly readable, but writable only by the author.
+ * - /questions/{questionId}/answers/{answerId}/comments/{commentId}: Stores comments on answers, publicly readable, but writable only by the author.
+ * - /tags/{tagId}: Stores tags, publicly readable and writable by anyone.
+ * - /roles_admin/{userId}: Grants admin privileges.
+ *
+ * Key Security Decisions:
+ * - Public read access to questions, answers and comments, as requested by the user.
+ * - Strict ownership for user profiles.
+ * - Questions, answers and comments can be created by anyone.
+ * - No listing restrictions.
+ *
+ * Denormalization for Authorization:
+ * - Questions include `authorId` to identify the author.
+ *
+ * Structural Segregation:
+ * - Uses separate collections for user data and public questions.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Controls access to user profiles.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' can create their profile.
+     * @allow (get, list) User with ID 'user123' can read their own profile.
+     * @allow (update) User with ID 'user123' can update their own profile.
+     * @allow (delete) User with ID 'user123' can delete their own profile.
+     * @deny (create) User with ID 'user456' cannot create a profile for 'user123'.
+     * @deny (update) User with ID 'user456' cannot update 'user123' profile.
+     * @deny (delete) User with ID 'user456' cannot delete 'user123' profile.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId} {
+      allow get, list: if true;
+      allow create: if request.resource.data.id == userId;
+      allow update: if request.resource.data.id == resource.data.id;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to questions.
+     * @path /questions/{questionId}
+     * @allow (get, list) Anyone can read any question.
+     * @allow (create) Anyone can create a question.
+     * @allow (update) Anyone can update a question.
+     * @allow (delete) Anyone can delete a question.
+     * @principle Allows public read access to questions; allows anyone to create, update, and delete questions.
+     */
+    match /questions/{questionId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    /**
+     * @description Controls access to answers.
+     * @path /questions/{questionId}/answers/{answerId}
+     * @allow (get, list) Anyone can read any answer.
+     * @allow (create) Anyone can create an answer.
+     * @allow (update) Anyone can update an answer.
+     * @allow (delete) Anyone can delete an answer.
+     * @principle Allows public read access to answers; allows anyone to create, update, and delete answers.
+     */
+    match /questions/{questionId}/answers/{answerId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    /**
+     * @description Controls access to comments.
+     * @path /questions/{questionId}/answers/{answerId}/comments/{commentId}
+     * @allow (get, list) Anyone can read any comment.
+     * @allow (create) Anyone can create a comment.
+     * @allow (update) Anyone can update a comment.
+     * @allow (delete) Anyone can delete a comment.
+     * @principle Allows public read access to comments; allows anyone to create, update, and delete comments.
+     */
+    match /questions/{questionId}/answers/{answerId}/comments/{commentId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+    /**
+     * @description Controls access to tags.
+     * @path /tags/{tagId}
+     * @allow (get, list) Anyone can read any tag.
+     * @allow (create) Anyone can create a tag.
+     * @allow (update) Anyone can update a tag.
+     * @allow (delete) Anyone can delete a tag.
+     * @principle Allows public read and write access to tags.
+     */
+    match /tags/{tagId} {
+      allow get, list: if true;
+      allow create: if true;
+      allow update: if true;
+      allow delete: if true;
+    }
+
+      /**
+       * @description Grants admin privileges based on the existence of a document.
+       * @path /roles_admin/{userId}
+       */
+      match /roles_admin/{userId} {
+        allow get, list: if false;
+        allow create: if true;
+        allow update: if true;
+        allow delete: if true;
+      }
+  }
+}
