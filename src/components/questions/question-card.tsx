@@ -14,9 +14,10 @@ import { Skeleton } from '../ui/skeleton';
 
 interface QuestionCardProps {
   question: Question;
+  onSelectQuestion: (questionId: string) => void;
 }
 
-export function QuestionCard({ question }: QuestionCardProps) {
+export function QuestionCard({ question, onSelectQuestion }: QuestionCardProps) {
   const firestore = useFirestore();
   
   const authorRef = useMemoFirebase(() => {
@@ -27,8 +28,19 @@ export function QuestionCard({ question }: QuestionCardProps) {
 
   const totalVotes = (question.upvotes || 0) - (question.downvotes || 0);
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent interfering with clicks on links inside the card
+    if ((e.target as HTMLElement).closest('a')) {
+      return;
+    }
+    onSelectQuestion(question.id);
+  };
+
   return (
-    <Card className="hover:border-primary/50 transition-colors">
+    <Card 
+        className="hover:border-primary/50 transition-colors cursor-pointer"
+        onClick={handleCardClick}
+    >
       <CardContent className="p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-[auto_1fr]">
           <div className="flex items-center gap-4 sm:flex-col sm:items-start sm:gap-2">
@@ -54,11 +66,9 @@ export function QuestionCard({ question }: QuestionCardProps) {
             </div>
           </div>
           <div className="space-y-3">
-            <Link href={`/questions/${question.id}`}>
-              <h2 className="font-headline text-xl font-semibold tracking-tight hover:text-primary transition-colors">
-                {question.title}
-              </h2>
-            </Link>
+            <h2 className="font-headline text-xl font-semibold tracking-tight hover:text-primary transition-colors">
+              {question.title}
+            </h2>
             <div className="flex flex-wrap items-center gap-2">
               {(question.tags || []).map((tag) => (
                 <TagBadge key={tag} tag={tag} />

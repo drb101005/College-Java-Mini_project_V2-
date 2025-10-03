@@ -15,16 +15,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { Question } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { QuestionView } from '@/components/questions/question-view';
 
 export default function Home() {
   const firestore = useFirestore();
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
 
   const questionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -44,6 +47,11 @@ export default function Home() {
       .slice(0, 10)
       .map(([tag]) => tag);
   }, [questions]);
+  
+  const selectedQuestion = useMemo(() => {
+    return questions?.find(q => q.id === selectedQuestionId);
+  }, [questions, selectedQuestionId]);
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -86,7 +94,11 @@ export default function Home() {
                 </>
               )}
               {questions?.map((question) => (
-                <QuestionCard key={question.id} question={question} />
+                <QuestionCard 
+                    key={question.id} 
+                    question={question} 
+                    onSelectQuestion={setSelectedQuestionId}
+                />
               ))}
             </div>
           </div>
@@ -110,6 +122,24 @@ export default function Home() {
         </div>
       </main>
       <Footer />
+       <Dialog open={!!selectedQuestionId} onOpenChange={(isOpen) => !isOpen && setSelectedQuestionId(null)}>
+        <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+            {selectedQuestion ? (
+                <>
+                <DialogHeader>
+                    <DialogTitle className="truncate pr-8">{selectedQuestion.title}</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto pr-6 -mr-6">
+                    <QuestionView questionId={selectedQuestion.id} />
+                </div>
+                </>
+            ) : (
+                <div className="flex items-center justify-center h-full">
+                    <p>Loading question...</p>
+                </div>
+            )}
+        </DialogContent>
+       </Dialog>
     </div>
   );
 }
