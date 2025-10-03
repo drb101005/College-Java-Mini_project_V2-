@@ -46,7 +46,9 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
   }, [firestore, question]);
   const { data: relatedQuestions, isLoading: isLoadingRelated } = useCollection<Question>(relatedQuestionsQuery);
   
-  if (isLoadingQuestion || isLoadingAuthor || isLoadingAnswers || isLoadingRelated) {
+  const isLoading = isLoadingQuestion || isLoadingAuthor || isLoadingAnswers || isLoadingRelated;
+
+  if (isLoading) {
     return (
         <div className="flex min-h-screen flex-col">
           <Header />
