@@ -7,7 +7,7 @@ import type { Question, Answer, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
-import { getQuestion, getAnswers, getRelatedQuestions, incrementQuestionView } from '@/lib/data';
+import { getQuestion, getAnswers, getRelatedQuestions, incrementQuestionView, getUser } from '@/lib/data';
 
 export function QuestionView({ questionId }: { questionId: string }) {
   const [question, setQuestion] = useState<Question | null>(null);
@@ -34,7 +34,7 @@ export function QuestionView({ questionId }: { questionId: string }) {
     ]);
     
     setQuestion(fetchedQuestion);
-    setAuthor(fetchedAuthor);
+    setAuthor(fetchedAuthor as User | null);
     setAnswers(fetchedAnswers);
     setRelatedQuestions(fetchedRelated);
 
