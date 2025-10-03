@@ -1,0 +1,365 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user within the Student Discussion Forum application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's username."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "department": {
+          "type": "string",
+          "description": "The user's department (e.g., Computer Science)."
+        },
+        "year": {
+          "type": "number",
+          "description": "The user's academic year (e.g., 2 for second year)."
+        },
+        "bio": {
+          "type": "string",
+          "description": "A brief biography of the user."
+        },
+        "skills": {
+          "type": "array",
+          "description": "A list of the user's skills.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "profilePictureUrl": {
+          "type": "string",
+          "description": "URL of the user's profile picture (optional).",
+          "format": "uri"
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role (Student or Teacher)."
+        },
+        "reputationPoints": {
+          "type": "number",
+          "description": "User's reputation points for the leaderboard."
+        },
+        "bookmarkedQuestionIds": {
+          "type": "array",
+          "description": "References to bookmarked Questions. (Relationship: User 1:N Question)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "followedQuestionIds": {
+          "type": "array",
+          "description": "References to followed Questions. (Relationship: User 1:N Question)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "firstName",
+        "lastName",
+        "department",
+        "year",
+        "bio",
+        "skills",
+        "role"
+      ]
+    },
+    "Question": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Question",
+      "type": "object",
+      "description": "Represents a question posted on the discussion forum.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Question entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the question."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the question."
+        },
+        "tagIds": {
+          "type": "array",
+          "description": "References to Tags. (Relationship: Question N:N Tag)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the User who posted the question. (Relationship: User 1:N Question)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the question was created.",
+          "format": "date-time"
+        },
+        "isSolved": {
+          "type": "boolean",
+          "description": "Indicates whether the question has been marked as solved."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "authorId",
+        "createdAt",
+        "isSolved"
+      ]
+    },
+    "Answer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Answer",
+      "type": "object",
+      "description": "Represents an answer to a question.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Answer entity."
+        },
+        "questionId": {
+          "type": "string",
+          "description": "Reference to the Question being answered. (Relationship: Question 1:N Answer)"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the User who posted the answer. (Relationship: User 1:N Answer)"
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the answer."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the answer was created.",
+          "format": "date-time"
+        },
+        "upvotes": {
+          "type": "number",
+          "description": "Number of upvotes for the answer."
+        },
+        "downvotes": {
+          "type": "number",
+          "description": "Number of downvotes for the answer."
+        },
+        "isAccepted": {
+          "type": "boolean",
+          "description": "Indicates whether the answer has been accepted by the question owner."
+        }
+      },
+      "required": [
+        "id",
+        "questionId",
+        "authorId",
+        "content",
+        "createdAt",
+        "upvotes",
+        "downvotes",
+        "isAccepted"
+      ]
+    },
+    "Comment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Comment",
+      "type": "object",
+      "description": "Represents a comment on an answer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Comment entity."
+        },
+        "answerId": {
+          "type": "string",
+          "description": "Reference to the Answer the comment belongs to. (Relationship: Answer 1:N Comment)"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Reference to the User who posted the comment. (Relationship: User 1:N Comment)"
+        },
+        "text": {
+          "type": "string",
+          "description": "The text content of the comment."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the comment was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "answerId",
+        "authorId",
+        "text",
+        "createdAt"
+      ]
+    },
+    "Tag": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tag",
+      "type": "object",
+      "description": "Represents a tag that can be associated with questions.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Tag entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the tag."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the user (or an admin) can modify their profile. Includes denormalized 'bookmarkedQuestionIds' and 'followedQuestionIds'.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/questions/{questionId}",
+        "definition": {
+          "entityName": "Question",
+          "schema": {
+            "$ref": "#/backend/entities/Question"
+          },
+          "description": "Stores questions posted by users. Includes 'authorId' for identifying the question's author and denormalized `authorRole` from `/users/{authorId}` for authorization independence.",
+          "params": [
+            {
+              "name": "questionId",
+              "description": "The unique identifier for the question."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/questions/{questionId}/answers/{answerId}",
+        "definition": {
+          "entityName": "Answer",
+          "schema": {
+            "$ref": "#/backend/entities/Answer"
+          },
+          "description": "Stores answers to questions. Includes 'authorId' for identifying the answer's author.",
+          "params": [
+            {
+              "name": "questionId",
+              "description": "The unique identifier for the question."
+            },
+            {
+              "name": "answerId",
+              "description": "The unique identifier for the answer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/questions/{questionId}/answers/{answerId}/comments/{commentId}",
+        "definition": {
+          "entityName": "Comment",
+          "schema": {
+            "$ref": "#/backend/entities/Comment"
+          },
+          "description": "Stores comments on answers. Includes 'authorId' for identifying the comment's author.",
+          "params": [
+            {
+              "name": "questionId",
+              "description": "The unique identifier for the question."
+            },
+            {
+              "name": "answerId",
+              "description": "The unique identifier for the answer."
+            },
+            {
+              "name": "commentId",
+              "description": "The unique identifier for the comment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tags/{tagId}",
+        "definition": {
+          "entityName": "Tag",
+          "schema": {
+            "$ref": "#/backend/entities/Tag"
+          },
+          "description": "Stores tags that can be associated with questions.",
+          "params": [
+            {
+              "name": "tagId",
+              "description": "The unique identifier for the tag."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "role",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores admin roles. Existence of a document at this path grants admin privileges to the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to provide a secure, scalable, and easily maintainable backend for the Student Discussion Forum. The primary focus is on Authorization Independence using denormalization and structural segregation.  User data is stored under `/users/{userId}`. Questions are stored in a top-level `/questions` collection, with the `authorId` and denormalized author role for security. Answers are stored in a subcollection `/questions/{questionId}/answers/{answerId}`. Comments are stored in a subcollection `/questions/{questionId}/answers/{answerId}/comments/{commentId}`.  Tags are stored in a top-level `/tags` collection. Bookmarked and followed questions will be denormalized as arrays of IDs in the User document. Admin roles will be stored under `/roles_admin/{userId}`. This design promotes clear security rules, avoids complex `get()` calls for authorization, and enables efficient querying and listing.  The denormalization of the author's role into questions ensures that listing questions remains secure and QAPs are maintained without having to `get()` the user document."
+  }
+}
