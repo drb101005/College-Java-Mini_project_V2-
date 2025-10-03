@@ -14,9 +14,8 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Badge } from '@/components/ui/badge';
 import { X, Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, addDoc } from 'firebase/firestore';
 import type { Question } from '@/lib/types';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export function AskQuestionForm() {
   const { user } = useAuth();
@@ -102,14 +101,14 @@ export function AskQuestionForm() {
 
       try {
         const questionsCollection = collection(firestore, 'questions');
-        await addDocumentNonBlocking(questionsCollection, newQuestion);
+        const docRef = await addDoc(questionsCollection, newQuestion);
         
         toast({
           title: 'Question Posted!',
           description: 'Your question is now live.',
         });
         
-        router.push('/');
+        router.push(`/questions/${docRef.id}`);
       } catch (error) {
         console.error("Error adding document: ", error);
         toast({
