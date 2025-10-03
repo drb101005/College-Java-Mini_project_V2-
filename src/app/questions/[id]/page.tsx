@@ -7,14 +7,14 @@ import { AnswerSection } from '@/components/questions/answer-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where, limit } from 'firebase/firestore';
+import { doc, collection, query, where, limit, updateDoc } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { Question, Answer, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { useEffect } from 'react';
 
-export default function QuestionPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function QuestionPage({ params: { id } }: { params: { id: string } }) {
   const firestore = useFirestore();
 
   const questionRef = useMemoFirebase(() => {
@@ -22,6 +22,14 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
     return doc(firestore, 'questions', id);
   }, [firestore, id]);
   const { data: question, isLoading: isLoadingQuestion } = useDoc<Question>(questionRef);
+
+  useEffect(() => {
+    if (questionRef && question) {
+      updateDoc(questionRef, {
+        views: (question.views || 0) + 1,
+      });
+    }
+  }, [questionRef, question]);
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !question?.authorId) return null;
