@@ -7,26 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/shared/logo';
-import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-provider';
 
 export default function RegisterPage() {
-    const { toast } = useToast();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const { signup } = useAuth();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [department, setDepartment] = useState('');
+    const [password, setPassword] = useState('');
 
-    const handleRegister = (e: React.FormEvent) => {
+    const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // This is a mock registration. In a real app, this would hit an API.
-        setTimeout(() => {
-            toast({
-                title: 'Registration Successful',
-                description: 'You can now log in with your email.',
-            });
-            router.push('/login');
-            setIsLoading(false);
-        }, 1000);
+        await signup(name, email, department);
+        setIsLoading(false);
+        router.push('/');
     };
 
 
@@ -45,15 +43,19 @@ export default function RegisterPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
-                <Input id="name" placeholder="John Doe" required disabled={isLoading}/>
+                <Input id="name" placeholder="John Doe" required disabled={isLoading} value={name} onChange={(e) => setName(e.target.value)}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="name@example.com" required disabled={isLoading}/>
+                <Input id="email" type="email" placeholder="name@example.com" required disabled={isLoading} value={email} onChange={(e) => setEmail(e.target.value)}/>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" placeholder="********" required disabled={isLoading} value={password} onChange={(e) => setPassword(e.target.value)}/>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input id="department" placeholder="e.g., Computer Science" required disabled={isLoading}/>
+                <Input id="department" placeholder="e.g., Computer Science" required disabled={isLoading} value={department} onChange={(e) => setDepartment(e.target.value)}/>
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating Account...' : 'Create Account'}

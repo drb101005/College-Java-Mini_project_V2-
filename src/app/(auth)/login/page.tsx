@@ -9,24 +9,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/shared/logo';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isUserLoading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const success = login(email);
-      if (success) {
-        router.push('/');
-      }
+    try {
+      login(email);
+      // Non-blocking, so we can't await. We rely on onAuthStateChanged listener.
+      toast({
+        title: 'Check your auth state',
+        description: 'Login attempt initiated.',
+      });
+      router.push('/');
+    } catch (error: any) {
+      toast({
+        title: 'Login Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -38,7 +50,7 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Welcome Back</CardTitle>
-            <CardDescription>Enter your email to sign in to your account.</CardDescription>
+            <CardDescription>Enter your email and password to sign in.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -51,11 +63,22 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isUserLoading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing In...' : 'Sign In'}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading || isUserLoading}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading || isUserLoading}>
+                {isLoading || isUserLoading ? 'Signing In...' : 'Sign In'}
               </Button>
             </form>
             <div className="mt-4 text-center text-sm">
