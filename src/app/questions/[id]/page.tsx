@@ -15,7 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { useEffect } from 'react';
 
-export default function QuestionPage({ params: { id } }: { params: { id: string } }) {
+export default function QuestionPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const firestore = useFirestore();
 
   const questionRef = useMemoFirebase(() => {
