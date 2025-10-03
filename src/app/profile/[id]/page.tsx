@@ -1,3 +1,4 @@
+
 'use client';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/shared/header';
@@ -11,8 +12,7 @@ import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { User, Question, Answer } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ProfilePage({ params: { id } }: { params: { id: string } }) {
   const firestore = useFirestore();
 
   const userRef = useMemoFirebase(() => {
