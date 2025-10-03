@@ -28,7 +28,8 @@ export function QuestionView({ questionId }: { questionId: string }) {
         views: increment(1),
       }).catch(console.error);
     }
-  }, [questionRef, question]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionId]); // Run only when the questionId changes
 
   const authorRef = useMemoFirebase(() => {
     if (!firestore || !question?.authorId) return null;
@@ -50,7 +51,7 @@ export function QuestionView({ questionId }: { questionId: string }) {
       where('id', '!=', question.id),
       limit(5)
     );
-  }, [firestore, question]);
+  }, [firestore, question?.tags, question?.id]);
   const { data: relatedQuestions, isLoading: isLoadingRelated } = useCollection<Question>(relatedQuestionsQuery);
   
   if (isLoadingQuestion) {

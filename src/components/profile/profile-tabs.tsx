@@ -21,6 +21,18 @@ function AnswerItem({ answer }: AnswerItemProps) {
     }, [firestore, answer.questionId]);
     const { data: question } = useDoc<Question>(questionRef);
 
+    if (!question) {
+        return (
+            <Card>
+                <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground">Answer on a question</p>
+                    <p className="mt-2 text-foreground/90 line-clamp-3">{answer.content}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">answered {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <Card>
             <CardContent className="p-4">
@@ -49,7 +61,7 @@ export function ProfileTabs({ questions, answers }: ProfileTabsProps) {
       </TabsList>
       <TabsContent value="questions" className="mt-4 space-y-4">
         {questions.length > 0 ? (
-            questions.map(q => <QuestionCard key={q.id} question={q} />)
+            questions.map(q => <QuestionCard key={q.id} question={q} onSelectQuestion={() => {}} />)
         ) : (
             <p className="text-center text-muted-foreground py-8">No questions asked yet.</p>
         )}
