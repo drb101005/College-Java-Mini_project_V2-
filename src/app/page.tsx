@@ -1,6 +1,7 @@
+'use client';
+
 import { Header } from '@/components/shared/header';
 import { Footer } from '@/components/shared/footer';
-import { mockQuestions, mockUsers, mockTags } from '@/lib/data';
 import { QuestionCard } from '@/components/questions/question-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -16,21 +17,47 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { PlusCircle } from 'lucide-react';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { collection } from 'firebase/firestore';
+import { useFirestore, useMemoFirebase } from '@/firebase';
+import type { Question, User } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
 
 export default function Home() {
-  const topContributors = mockUsers
-    .sort((a, b) => b.reputation - a.reputation)
-    .slice(0, 5);
+  const firestore = useFirestore();
 
-  const popularTags = Object.entries(
-    mockQuestions.flatMap((q) => q.tags).reduce((acc, tag) => {
+  const questionsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'questions');
+  }, [firestore]);
+  const { data: questions, isLoading: isLoadingQuestions } = useCollection<Question>(questionsQuery);
+
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
+
+  const topContributors = useMemo(() => {
+    if (!users) return [];
+    return [...users]
+      .sort((a, b) => b.reputation - a.reputation)
+      .slice(0, 5);
+  }, [users]);
+  
+  const popularTags = useMemo(() => {
+    if (!questions) return [];
+    const tagCounts = questions.flatMap(q => q.tags || []).reduce((acc, tag) => {
       acc[tag] = (acc[tag] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>)
-  )
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([tag]) => tag);
+    }, {} as Record<string, number>);
+
+    return Object.entries(tagCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([tag]) => tag);
+  }, [questions]);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -65,7 +92,14 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              {mockQuestions.map((question) => (
+              {isLoadingQuestions && (
+                <>
+                  <Skeleton className="h-40 w-full" />
+                  <Skeleton className="h-40 w-full" />
+                  <Skeleton className="h-40 w-full" />
+                </>
+              )}
+              {questions?.map((question) => (
                 <QuestionCard key={question.id} question={question} />
               ))}
             </div>
@@ -77,20 +111,28 @@ export default function Home() {
                 <CardTitle className="font-headline text-lg">Top Contributors</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-4">
-                  {topContributors.map((user) => (
-                    <li key={user.id} className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={user.avatarUrl} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.reputation} points</p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                {isLoadingUsers ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  <ul className="space-y-4">
+                    {topContributors.map((user) => (
+                      <li key={user.id} className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={user.avatarUrl} alt={user.name} />
+                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.reputation} points</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
 
@@ -99,9 +141,13 @@ export default function Home() {
                 <CardTitle className="font-headline text-lg">Popular Tags</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                {popularTags.map((tag) => (
-                  <TagBadge key={tag} tag={tag} />
-                ))}
+                {isLoadingQuestions ? (
+                  <Skeleton className="h-20 w-full" />
+                ) : (
+                  popularTags.map((tag) => (
+                    <TagBadge key={tag} tag={tag} />
+                  ))
+                )}
               </CardContent>
             </Card>
           </aside>

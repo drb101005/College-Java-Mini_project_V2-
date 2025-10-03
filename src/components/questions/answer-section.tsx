@@ -6,8 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-provider';
+import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
+import { collection, updateDoc, doc } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import Link from 'next/link';
 
 interface AnswerSectionProps {
   answers: Answer[];
@@ -16,6 +20,7 @@ interface AnswerSectionProps {
 
 export function AnswerSection({ answers, question }: AnswerSectionProps) {
   const { user } = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const [newAnswer, setNewAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,9 +33,9 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
     return (b.upvotes - b.downvotes) - (a.upvotes - a.downvotes);
   });
 
-  const handlePostAnswer = (e: React.FormEvent) => {
+  const handlePostAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
+    if (!user || !firestore) {
       toast({ title: "Please log in to post an answer.", variant: "destructive" });
       return;
     }
@@ -40,12 +45,33 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-        toast({ title: "Answer posted successfully!" });
-        setNewAnswer('');
-        setIsSubmitting(false);
-        // Here you would typically re-fetch data or update state
-    }, 1000);
+    
+    const answerCollectionRef = collection(firestore, `questions/${question.id}/answers`);
+    const newAnswerData = {
+      content: newAnswer,
+      authorId: user.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      upvotes: 0,
+      downvotes: 0,
+    };
+
+    try {
+      await addDocumentNonBlocking(answerCollectionRef, newAnswerData);
+
+      const questionRef = doc(firestore, 'questions', question.id);
+      await updateDoc(questionRef, {
+        answerCount: (question.answerCount || 0) + 1,
+      });
+
+      toast({ title: "Answer posted successfully!" });
+      setNewAnswer('');
+    } catch (error) {
+      console.error("Error posting answer: ", error);
+      toast({ title: "Failed to post answer", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -56,8 +82,9 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
           <AnswerCard 
             key={answer.id} 
             answer={answer} 
+            questionId={question.id}
+            questionAuthorId={question.authorId}
             isAccepted={question.acceptedAnswerId === answer.id}
-            isQuestionOwner={user?.id === question.authorId}
           />
         ))}
       </div>
@@ -73,6 +100,7 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
                             placeholder="Write your detailed answer here."
                             value={newAnswer}
                             onChange={(e) => setNewAnswer(e.target.value)}
+                            disabled={isSubmitting}
                         />
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? 'Posting...' : 'Post Your Answer'}
@@ -81,7 +109,7 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
                 </CardContent>
             </Card>
         ) : (
-            <p>You must be <a href="/login" className="text-primary hover:underline">logged in</a> to post an answer.</p>
+            <p>You must be <Link href="/login" className="text-primary hover:underline">logged in</Link> to post an answer.</p>
         )}
       </div>
     </div>

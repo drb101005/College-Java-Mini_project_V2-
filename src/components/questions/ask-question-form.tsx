@@ -13,11 +13,16 @@ import { suggestTags } from '@/ai/flows/ai-suggest-tags';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Badge } from '@/components/ui/badge';
 import { X, Loader2 } from 'lucide-react';
+import { useFirestore } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import type { Question } from '@/lib/types';
+import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export function AskQuestionForm() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -27,17 +32,7 @@ export function AskQuestionForm() {
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isSuggesting, setIsSuggesting] = useState(false);
   const debouncedDescription = useDebounce(description, 1000);
-
-  useEffect(() => {
-    if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'You need to be logged in to ask a question.',
-        variant: 'destructive',
-      });
-      router.push('/login');
-    }
-  }, [user, router, toast]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (debouncedDescription.trim().length > 50) {
@@ -81,17 +76,49 @@ export function AskQuestionForm() {
     setSuggestedTags(suggestedTags.filter(t => t !== tagToAdd));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user || !firestore) {
+        toast({ title: 'You must be logged in to ask a question.', variant: 'destructive'});
+        return;
+    }
+
     if (title && description && tags.length > 0) {
-      toast({
-        title: 'Question Posted!',
-        description: 'Your question is now live.',
-      });
-      // In a real app, you would create a new question object
-      // and send it to your backend API.
-      // For now, we just navigate away.
-      router.push('/');
+      setIsSubmitting(true);
+      
+      const newQuestion: Omit<Question, 'id'> = {
+        title,
+        description,
+        tags,
+        authorId: user.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isSolved: false,
+        views: 0,
+        upvotes: 0,
+        downvotes: 0,
+        answerCount: 0,
+      };
+
+      try {
+        const questionsCollection = collection(firestore, 'questions');
+        await addDocumentNonBlocking(questionsCollection, newQuestion);
+        
+        toast({
+          title: 'Question Posted!',
+          description: 'Your question is now live.',
+        });
+        
+        router.push('/');
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        toast({
+          title: 'Error',
+          description: 'Could not post your question. Please try again.',
+          variant: 'destructive'
+        });
+        setIsSubmitting(false);
+      }
     } else {
       toast({
         title: 'Incomplete Form',
@@ -110,13 +137,13 @@ export function AskQuestionForm() {
           <div className="space-y-2">
             <Label htmlFor="title" className="text-base font-semibold">Title</Label>
             <p className="text-sm text-muted-foreground">Be specific and imagine you’re asking a question to another person.</p>
-            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., How to implement authentication in Next.js?" />
+            <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., How to implement authentication in Next.js?" disabled={isSubmitting}/>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description" className="text-base font-semibold">Description</Label>
             <p className="text-sm text-muted-foreground">Include all the information someone would need to answer your question.</p>
-            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={10} />
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} rows={10} disabled={isSubmitting}/>
           </div>
 
            <div className="space-y-2">
@@ -126,7 +153,7 @@ export function AskQuestionForm() {
                 {tags.map(tag => (
                     <Badge key={tag} variant="secondary" className="flex items-center gap-1">
                         {tag}
-                        <button onClick={() => removeTag(tag)} className="rounded-full hover:bg-muted-foreground/20">
+                        <button type="button" onClick={() => removeTag(tag)} className="rounded-full hover:bg-muted-foreground/20">
                             <X size={12} />
                         </button>
                     </Badge>
@@ -138,7 +165,7 @@ export function AskQuestionForm() {
                     onKeyDown={handleTagInputKeyDown}
                     placeholder={tags.length < 5 ? 'Add a tag...' : ''}
                     className="flex-1 border-none shadow-none focus-visible:ring-0"
-                    disabled={tags.length >= 5}
+                    disabled={tags.length >= 5 || isSubmitting}
                 />
             </div>
             {isSuggesting || suggestedTags.length > 0 ? (
@@ -158,7 +185,14 @@ export function AskQuestionForm() {
             ) : null}
           </div>
 
-          <Button type="submit" className="w-full sm:w-auto">Post Your Question</Button>
+          <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Posting...
+              </>
+            ) : 'Post Your Question'}
+          </Button>
         </form>
       </CardContent>
     </Card>
