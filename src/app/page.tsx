@@ -6,7 +6,6 @@ import { QuestionCard } from '@/components/questions/question-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TagBadge } from '@/components/questions/tag-badge';
 import {
   Select,
@@ -20,7 +19,7 @@ import { PlusCircle } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { collection } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase';
-import type { Question, User } from '@/lib/types';
+import type { Question } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
 
@@ -32,19 +31,6 @@ export default function Home() {
     return collection(firestore, 'questions');
   }, [firestore]);
   const { data: questions, isLoading: isLoadingQuestions } = useCollection<Question>(questionsQuery);
-
-  const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersQuery);
-
-  const topContributors = useMemo(() => {
-    if (!users) return [];
-    return [...users]
-      .sort((a, b) => (b.reputation || 0) - (a.reputation || 0))
-      .slice(0, 5);
-  }, [users]);
   
   const popularTags = useMemo(() => {
     if (!questions) return [];
@@ -106,36 +92,6 @@ export default function Home() {
           </div>
 
           <aside className="space-y-8 md:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-headline text-lg">Top Contributors</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoadingUsers ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : (
-                  <ul className="space-y-4">
-                    {topContributors.map((user) => (
-                      <li key={user.id} className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatarUrl} alt={user.name} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{(user.reputation || 0)} points</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </CardContent>
-            </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle className="font-headline text-lg">Popular Tags</CardTitle>

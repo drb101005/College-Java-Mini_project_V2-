@@ -15,9 +15,6 @@ export function Header() {
             <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                 Questions
             </Link>
-            <Link href="/leaderboard" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-                Leaderboard
-            </Link>
              <Link href="/tags" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
                 Tags
             </Link>
