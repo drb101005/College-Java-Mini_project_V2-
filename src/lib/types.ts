@@ -25,7 +25,7 @@ export type Question = {
   views: number;
   upvotes: number;
   downvotes: number;
-  answerCount?: number;
+  answerCount: number;
 };
 
 export type Answer = {
