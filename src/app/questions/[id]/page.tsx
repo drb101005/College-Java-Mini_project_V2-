@@ -1,3 +1,4 @@
+
 'use client';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/shared/header';
@@ -7,7 +8,7 @@ import { AnswerSection } from '@/components/questions/answer-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where, limit, updateDoc } from 'firebase/firestore';
+import { doc, collection, query, where, limit, updateDoc, increment } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { Question, Answer, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,9 +26,10 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
 
   useEffect(() => {
     if (questionRef && question) {
+      // Use non-blocking update for view count
       updateDoc(questionRef, {
-        views: (question.views || 0) + 1,
-      });
+        views: increment(1),
+      }).catch(console.error); // Log error but don't block
     }
   }, [questionRef, question]);
 
@@ -56,7 +58,14 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
   
   const isLoading = isLoadingQuestion || isLoadingAuthor || isLoadingAnswers || isLoadingRelated;
 
-  if (isLoading) {
+  // This is the critical fix:
+  // Only call notFound() AFTER loading is complete AND the question is still null.
+  if (!isLoadingQuestion && !question) {
+    notFound();
+  }
+
+  // Show a loading state while the main question is being fetched.
+  if (isLoadingQuestion) {
     return (
         <div className="flex min-h-screen flex-col">
           <Header />
@@ -77,18 +86,16 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
     )
   }
 
-  if (!question) {
-    notFound();
-  }
-
+  // Once the question is loaded, render the page.
+  // We can show skeletons for other parts that might still be loading.
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 bg-background">
         <div className="container mx-auto grid grid-cols-1 gap-8 px-4 py-8 md:grid-cols-4">
           <div className="md:col-span-3">
-            <QuestionDetails question={question} author={author} />
-            <AnswerSection answers={answers || []} question={question} />
+            {question && <QuestionDetails question={question} author={author} />}
+            {isLoadingAnswers ? <Skeleton className="h-64 w-full" /> : <AnswerSection answers={answers || []} question={question!} />}
           </div>
           <aside className="space-y-8 md:col-span-1">
              <Card>
@@ -98,7 +105,7 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
               <CardContent className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Votes</span>
-                  <span className="font-bold">{(question.upvotes || 0) - (question.downvotes || 0)}</span>
+                  <span className="font-bold">{(question?.upvotes || 0) - (question?.downvotes || 0)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Answers</span>
@@ -106,18 +113,19 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Views</span>
-                  <span className="font-bold">{(question.views || 0).toLocaleString()}</span>
+                  <span className="font-bold">{(question?.views || 0).toLocaleString()}</span>
                 </div>
               </CardContent>
             </Card>
-            {relatedQuestions && relatedQuestions.length > 0 && (
+            {isLoadingRelated ? <Skeleton className="h-48 w-full" /> : (
+              relatedQuestions && relatedQuestions.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="font-headline text-lg">Related Questions</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-3">
-                    {relatedQuestions.filter(rq => rq.id !== question.id).map(rq => (
+                    {relatedQuestions.filter(rq => rq.id !== question!.id).map(rq => (
                         <li key={rq.id}>
                             <Link href={`/questions/${rq.id}`} className="text-sm text-primary hover:underline">
                                 {rq.title}
@@ -127,6 +135,7 @@ export default function QuestionPage({ params: { id } }: { params: { id: string 
                   </ul>
                 </CardContent>
               </Card>
+              )
             )}
           </aside>
         </div>

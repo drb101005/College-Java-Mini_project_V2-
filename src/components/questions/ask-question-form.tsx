@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { X, Loader2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc } from 'firebase/firestore';
-import type { Question } from '@/lib/types';
 
 export function AskQuestionForm() {
   const { user } = useAuth();
@@ -85,7 +85,7 @@ export function AskQuestionForm() {
     if (title && description && tags.length > 0) {
       setIsSubmitting(true);
       
-      const newQuestion: Omit<Question, 'id'> = {
+      const newQuestion = {
         title,
         description,
         tags,
