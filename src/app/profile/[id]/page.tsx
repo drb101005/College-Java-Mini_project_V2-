@@ -12,24 +12,25 @@ import type { User, Question, Answer } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const firestore = useFirestore();
 
   const userRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'users', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'users', id);
+  }, [firestore, id]);
   const { data: user, isLoading: isLoadingUser } = useDoc<User>(userRef);
 
   const questionsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'questions'), where('authorId', '==', params.id));
-  }, [firestore, params.id]);
+    return query(collection(firestore, 'questions'), where('authorId', '==', id));
+  }, [firestore, id]);
   const { data: questions, isLoading: isLoadingQuestions } = useCollection<Question>(questionsQuery);
 
   const answersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'answers'), where('authorId', '==', params.id));
-  }, [firestore, params.id]);
+    return query(collection(firestore, 'answers'), where('authorId', '==', id));
+  }, [firestore, id]);
   const { data: answers, isLoading: isLoadingAnswers } = useCollection<Answer>(answersQuery);
 
   if (isLoadingUser || isLoadingQuestions || isLoadingAnswers) {

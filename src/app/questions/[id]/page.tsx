@@ -14,12 +14,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 
 export default function QuestionPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const firestore = useFirestore();
 
   const questionRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return doc(firestore, 'questions', params.id);
-  }, [firestore, params.id]);
+    return doc(firestore, 'questions', id);
+  }, [firestore, id]);
   const { data: question, isLoading: isLoadingQuestion } = useDoc<Question>(questionRef);
 
   const authorRef = useMemoFirebase(() => {
@@ -30,8 +31,8 @@ export default function QuestionPage({ params }: { params: { id: string } }) {
 
   const answersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, `questions/${params.id}/answers`);
-  }, [firestore, params.id]);
+    return collection(firestore, `questions/${id}/answers`);
+  }, [firestore, id]);
   const { data: answers, isLoading: isLoadingAnswers } = useCollection<Answer>(answersQuery);
 
   const relatedQuestionsQuery = useMemoFirebase(() => {
