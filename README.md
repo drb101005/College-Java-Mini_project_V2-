@@ -18,29 +18,63 @@ NexusLearn is a full-stack web application built with Next.js, designed as a dis
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [shadcn/ui](https://ui.shadcn.com/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 
-## Getting Started
+---
 
-Follow these steps to get the project running on your local machine.
+## Getting The Code
+
+### Step 1: Push to Your Own GitHub Repository
+
+To get this code into your own GitHub account, run these commands in your terminal from the project's root directory.
+
+1.  **Initialize Git:**
+    ```bash
+    git init -b main
+    ```
+2.  **Add all files:**
+    ```bash
+    git add .
+    ```
+3.  **Create your first commit:**
+    ```bash
+    git commit -m "Initial commit"
+    ```
+4.  **Link to your GitHub repo (replace the URL with your own):**
+    ```bash
+    git remote add origin <your-github-repository-url>
+    ```
+5.  **Push the code to GitHub:**
+    ```bash
+    git push -u origin main
+    ```
+
+### Step 2: Download (Clone) From Your GitHub to Your PC
+
+Now, on your personal computer, open a terminal and run this command to download the code:
+
+```bash
+git clone <your-github-repository-url>
+cd <project-directory>
+```
+---
+
+## Running the Development Server
+
+Once you have the code on your local machine, follow these steps.
 
 ### Prerequisites
 
 - Node.js (v18 or later)
 - npm, yarn, or pnpm
+- Git
 
 ### Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository-url>
-    cd <project-directory>
-    ```
+Navigate into the project directory and install the required dependencies:
+```bash
+npm install
+```
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-### Running the Development Server
+### Run the App
 
 Once the installation is complete, you can run the development server:
 
