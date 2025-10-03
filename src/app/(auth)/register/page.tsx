@@ -13,16 +13,15 @@ import { useAuth } from '@/contexts/auth-provider';
 export default function RegisterPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const { signup } = useAuth();
+    const { login } = useAuth();
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [department, setDepartment] = useState('');
-    const [password, setPassword] = useState('');
 
-    const handleRegister = async (e: React.FormEvent) => {
+    const handleRegister = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        await signup(name, email, department);
+        // With fake auth, registration just logs in the user.
+        login(email);
         setIsLoading(false);
         router.push('/');
     };
@@ -37,7 +36,7 @@ export default function RegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Create an Account</CardTitle>
-            <CardDescription>Enter your information to get started.</CardDescription>
+            <CardDescription>Enter any details to create a mock account.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
@@ -51,11 +50,11 @@ export default function RegisterPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="********" required disabled={isLoading} value={password} onChange={(e) => setPassword(e.target.value)}/>
+                <Input id="password" type="password" placeholder="********" required disabled={isLoading} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="department">Department</Label>
-                <Input id="department" placeholder="e.g., Computer Science" required disabled={isLoading} value={department} onChange={(e) => setDepartment(e.target.value)}/>
+                <Input id="department" placeholder="e.g., Computer Science" required disabled={isLoading} />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating Account...' : 'Create Account'}

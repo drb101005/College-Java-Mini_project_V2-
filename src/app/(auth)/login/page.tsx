@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, isUserLoading } = useAuth();
   const router = useRouter();
@@ -22,23 +21,22 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    try {
-      login(email);
-      // Non-blocking, so we can't await. We rely on onAuthStateChanged listener.
+    // In our fake auth, we just "log in" the first mock user
+    const success = login(email);
+    if (success) {
       toast({
-        title: 'Check your auth state',
-        description: 'Login attempt initiated.',
+        title: 'Login Successful',
+        description: "Welcome back!",
       });
       router.push('/');
-    } catch (error: any) {
-      toast({
+    } else {
+       toast({
         title: 'Login Failed',
-        description: error.message,
+        description: 'This is a demo. Any valid email format works. e.g., user@example.com',
         variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   return (
@@ -50,7 +48,7 @@ export default function LoginPage() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Welcome Back</CardTitle>
-            <CardDescription>Enter your email and password to sign in.</CardDescription>
+            <CardDescription>This is a mock login. Enter any valid email to proceed.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
@@ -72,8 +70,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  defaultValue="password123"
                   disabled={isLoading || isUserLoading}
                 />
               </div>

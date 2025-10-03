@@ -34,7 +34,7 @@ export function QuestionDetails({ question, author }: QuestionDetailsProps) {
         <VoteControl 
             upvotes={question.upvotes || 0} 
             downvotes={question.downvotes || 0}
-            docPath={`questions/${question.id}`}
+            onVote={() => {}}
         />
         <div className="prose prose-zinc w-full max-w-none dark:prose-invert">
           <p>{question.description}</p>

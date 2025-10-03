@@ -5,21 +5,20 @@ import { QuestionCard } from "../questions/question-card";
 import { Card, CardContent } from "../ui/card";
 import Link from 'next/link';
 import { formatDistanceToNow } from "date-fns";
-import { useDoc } from "@/firebase/firestore/use-doc";
-import { doc } from "firebase/firestore";
-import { useFirestore, useMemoFirebase } from "@/firebase";
+import { getQuestion } from "@/lib/data";
+import { useEffect, useState } from "react";
 
 interface AnswerItemProps {
     answer: Answer;
 }
 
 function AnswerItem({ answer }: AnswerItemProps) {
-    const firestore = useFirestore();
-    const questionRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'questions', answer.questionId);
-    }, [firestore, answer.questionId]);
-    const { data: question } = useDoc<Question>(questionRef);
+    const [question, setQuestion] = useState<Question | null>(null);
+
+    useEffect(() => {
+        getQuestion(answer.questionId).then(setQuestion);
+    }, [answer.questionId]);
+
 
     if (!question) {
         return (
@@ -37,7 +36,7 @@ function AnswerItem({ answer }: AnswerItemProps) {
         <Card>
             <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">
-                    Answered on <Link href={`/questions/${question?.id}`} className="text-primary hover:underline">{question?.title || 'a question'}</Link>
+                    Answered on <span className="text-primary hover:underline">{question?.title || 'a question'}</span>
                 </p>
                 <p className="mt-2 text-foreground/90 line-clamp-3">{answer.content}</p>
                 <p className="mt-2 text-xs text-muted-foreground">answered {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}</p>

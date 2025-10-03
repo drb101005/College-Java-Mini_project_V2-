@@ -17,36 +17,29 @@ import {
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PlusCircle } from 'lucide-react';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { Question } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { QuestionView } from '@/components/questions/question-view';
+import { getQuestions, getTags } from '@/lib/data';
 
 export default function Home() {
-  const firestore = useFirestore();
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [popularTags, setPopularTags] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const questionsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'questions');
-  }, [firestore]);
-  const { data: questions, isLoading: isLoadingQuestions } = useCollection<Question>(questionsQuery);
-  
-  const popularTags = useMemo(() => {
-    if (!questions) return [];
-    const tagCounts = questions.flatMap(q => q.tags || []).reduce((acc, tag) => {
-      acc[tag] = (acc[tag] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return Object.entries(tagCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([tag]) => tag);
-  }, [questions]);
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      const fetchedQuestions = await getQuestions();
+      const fetchedTags = await getTags();
+      setQuestions(fetchedQuestions);
+      setPopularTags(fetchedTags);
+      setIsLoading(false);
+    }
+    fetchData();
+  }, []);
   
   const selectedQuestion = useMemo(() => {
     return questions?.find(q => q.id === selectedQuestionId);
@@ -86,7 +79,7 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              {isLoadingQuestions && (
+              {isLoading && (
                 <>
                   <Skeleton className="h-40 w-full" />
                   <Skeleton className="h-40 w-full" />
@@ -109,7 +102,7 @@ export default function Home() {
                 <CardTitle className="font-headline text-lg">Popular Tags</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-wrap gap-2">
-                {isLoadingQuestions ? (
+                {isLoading ? (
                   <Skeleton className="h-20 w-full" />
                 ) : (
                   popularTags.map((tag) => (

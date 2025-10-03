@@ -8,44 +8,43 @@ import { VoteControl } from './vote-control';
 import { CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CommentList } from './comment-list';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useAuth, useFirestore, useMemoFirebase } from '@/firebase';
+import { useAuth } from '@/contexts/auth-provider';
 import { useToast } from '@/hooks/use-toast';
+import { getUser, acceptAnswer } from '@/lib/data';
+import { useEffect, useState } from 'react';
 
 interface AnswerCardProps {
   answer: Answer;
   questionId: string;
   questionAuthorId: string;
   isAccepted: boolean;
+  onAccept: () => void;
 }
 
-export function AnswerCard({ answer, questionId, questionAuthorId, isAccepted }: AnswerCardProps) {
-  const firestore = useFirestore();
+export function AnswerCard({ answer, questionId, questionAuthorId, isAccepted, onAccept }: AnswerCardProps) {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
+  const [author, setAuthor] = useState<User | null>(null);
 
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !answer.authorId) return null;
-    return doc(firestore, 'users', answer.authorId);
-  }, [firestore, answer.authorId]);
-  const { data: author } = useDoc<User>(authorRef);
+  useEffect(() => {
+    getUser(answer.authorId).then(setAuthor);
+  }, [answer.authorId]);
 
   const isQuestionOwner = currentUser?.id === questionAuthorId;
 
   const handleAcceptAnswer = async () => {
-    if (!firestore) return;
     if (!currentUser) {
         toast({ title: 'Please log in to accept an answer.', variant: 'destructive'});
         return;
     }
-    const questionRef = doc(firestore, 'questions', questionId);
+    if (!isQuestionOwner) {
+        toast({ title: 'Only the question author can accept an answer.', variant: 'destructive'});
+        return;
+    }
     try {
-      await updateDoc(questionRef, {
-        acceptedAnswerId: answer.id,
-        isSolved: true,
-      });
+      await acceptAnswer(questionId, answer.id);
       toast({ title: 'Answer accepted!' });
+      onAccept();
     } catch (error) {
       toast({ title: 'Failed to accept answer.', variant: 'destructive' });
     }
@@ -57,7 +56,7 @@ export function AnswerCard({ answer, questionId, questionAuthorId, isAccepted }:
         <VoteControl 
             upvotes={answer.upvotes} 
             downvotes={answer.downvotes}
-            docPath={`questions/${questionId}/answers/${answer.id}`}
+            onVote={() => {}}
         />
         {isAccepted && (
           <div className="mt-2" title="Accepted Answer">

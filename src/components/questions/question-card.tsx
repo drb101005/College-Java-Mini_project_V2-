@@ -7,10 +7,9 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { StatsBadge } from './stats-badge';
 import { ThumbsUp, MessageSquare, Eye } from 'lucide-react';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { doc } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '../ui/skeleton';
+import { getUser } from '@/lib/data';
+import { useEffect, useState } from 'react';
 
 interface QuestionCardProps {
   question: Question;
@@ -18,13 +17,17 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ question, onSelectQuestion }: QuestionCardProps) {
-  const firestore = useFirestore();
-  
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !question.authorId) return null;
-    return doc(firestore, 'users', question.authorId);
-  }, [firestore, question.authorId]);
-  const { data: author, isLoading: isLoadingAuthor } = useDoc<User>(authorRef);
+  const [author, setAuthor] = useState<User | null>(null);
+  const [isLoadingAuthor, setIsLoadingAuthor] = useState(true);
+
+  useEffect(() => {
+    setIsLoadingAuthor(true);
+    getUser(question.authorId).then(user => {
+      setAuthor(user);
+      setIsLoadingAuthor(false);
+    });
+  }, [question.authorId]);
+
 
   const totalVotes = (question.upvotes || 0) - (question.downvotes || 0);
 

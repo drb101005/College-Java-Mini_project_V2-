@@ -6,21 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/auth-provider';
-import { useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { collection, updateDoc, doc } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Link from 'next/link';
+import { postAnswer } from '@/lib/data';
 
 interface AnswerSectionProps {
   answers: Answer[];
   question: Question;
+  onAnswerPosted: () => void;
 }
 
-export function AnswerSection({ answers, question }: AnswerSectionProps) {
+export function AnswerSection({ answers, question, onAnswerPosted }: AnswerSectionProps) {
   const { user } = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [newAnswer, setNewAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +33,7 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
 
   const handlePostAnswer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !firestore) {
+    if (!user) {
       toast({ title: "Please log in to post an answer.", variant: "destructive" });
       return;
     }
@@ -46,26 +44,12 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
 
     setIsSubmitting(true);
     
-    const answerCollectionRef = collection(firestore, `questions/${question.id}/answers`);
-    const newAnswerData = {
-      content: newAnswer,
-      authorId: user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      upvotes: 0,
-      downvotes: 0,
-    };
-
     try {
-      await addDocumentNonBlocking(answerCollectionRef, newAnswerData);
-
-      const questionRef = doc(firestore, 'questions', question.id);
-      await updateDoc(questionRef, {
-        answerCount: (question.answerCount || 0) + 1,
-      });
+      await postAnswer(question.id, user.id, newAnswer);
 
       toast({ title: "Answer posted successfully!" });
       setNewAnswer('');
+      onAnswerPosted();
     } catch (error) {
       console.error("Error posting answer: ", error);
       toast({ title: "Failed to post answer", variant: "destructive" });
@@ -85,6 +69,7 @@ export function AnswerSection({ answers, question }: AnswerSectionProps) {
             questionId={question.id}
             questionAuthorId={question.authorId}
             isAccepted={question.acceptedAnswerId === answer.id}
+            onAccept={onAnswerPosted}
           />
         ))}
       </div>

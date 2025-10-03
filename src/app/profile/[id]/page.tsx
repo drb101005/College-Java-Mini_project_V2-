@@ -1,39 +1,40 @@
-
 'use client';
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/shared/header';
 import { Footer } from '@/components/shared/footer';
 import { ProfileHeader } from '@/components/profile/profile-header';
 import { ProfileTabs } from '@/components/profile/profile-tabs';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { User, Question, Answer } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useState } from 'react';
+import { getUser, getQuestionsByAuthor, getAnswersByAuthor } from '@/lib/data';
 
 export default function ProfilePage({ params: { id } }: { params: { id: string } }) {
-  const firestore = useFirestore();
+  const [user, setUser] = useState<User | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const userRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'users', id);
-  }, [firestore, id]);
-  const { data: user, isLoading: isLoadingUser } = useDoc<User>(userRef);
+  useEffect(() => {
+    async function fetchData() {
+      setIsLoading(true);
+      const fetchedUser = await getUser(id);
+      if (fetchedUser) {
+        setUser(fetchedUser);
+        const [fetchedQuestions, fetchedAnswers] = await Promise.all([
+            getQuestionsByAuthor(id),
+            getAnswersByAuthor(id),
+        ]);
+        setQuestions(fetchedQuestions);
+        setAnswers(fetchedAnswers);
+      }
+      setIsLoading(false);
+    }
+    fetchData();
+  }, [id]);
 
-  const questionsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'questions'), where('authorId', '==', id));
-  }, [firestore, id]);
-  const { data: questions, isLoading: isLoadingQuestions } = useCollection<Question>(questionsQuery);
 
-  const answersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'answers'), where('authorId', '==', id));
-  }, [firestore, id]);
-  const { data: answers, isLoading: isLoadingAnswers } = useCollection<Answer>(answersQuery);
-
-  if (isLoadingUser || isLoadingQuestions || isLoadingAnswers) {
+  if (isLoading) {
     return (
         <div className="flex min-h-screen flex-col">
           <Header />
@@ -57,8 +58,8 @@ export default function ProfilePage({ params: { id } }: { params: { id: string }
       <Header />
       <main className="flex-1 bg-background">
         <div className="container mx-auto max-w-5xl px-4 py-8">
-          <ProfileHeader user={user} questionCount={questions?.length || 0} answerCount={answers?.length || 0} />
-          <ProfileTabs questions={questions || []} answers={answers || []} />
+          <ProfileHeader user={user} questionCount={questions.length} answerCount={answers.length} />
+          <ProfileTabs questions={questions} answers={answers} />
         </div>
       </main>
       <Footer />

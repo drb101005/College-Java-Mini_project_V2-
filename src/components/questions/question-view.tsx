@@ -1,60 +1,52 @@
 'use client';
 
-import { notFound } from 'next/navigation';
 import { QuestionDetails } from '@/components/questions/question-details';
 import { AnswerSection } from '@/components/questions/answer-section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDoc } from '@/firebase/firestore/use-doc';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { doc, collection, query, where, limit, updateDoc, increment } from 'firebase/firestore';
-import { useFirestore, useMemoFirebase } from '@/firebase';
 import type { Question, Answer, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { getQuestion, getAnswers, getRelatedQuestions, incrementQuestionView } from '@/lib/data';
 
 export function QuestionView({ questionId }: { questionId: string }) {
-  const firestore = useFirestore();
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [author, setAuthor] = useState<User | null>(null);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [relatedQuestions, setRelatedQuestions] = useState<Question[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const questionRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'questions', questionId);
-  }, [firestore, questionId]);
-  const { data: question, isLoading: isLoadingQuestion } = useDoc<Question>(questionRef);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    
+    const fetchedQuestion = await getQuestion(questionId);
+    if (!fetchedQuestion) {
+      setIsLoading(false);
+      return;
+    }
+
+    incrementQuestionView(questionId);
+
+    const [fetchedAuthor, fetchedAnswers, fetchedRelated] = await Promise.all([
+      getUser(fetchedQuestion.authorId),
+      getAnswers(questionId),
+      getRelatedQuestions(fetchedQuestion)
+    ]);
+    
+    setQuestion(fetchedQuestion);
+    setAuthor(fetchedAuthor);
+    setAnswers(fetchedAnswers);
+    setRelatedQuestions(fetchedRelated);
+
+    setIsLoading(false);
+  }, [questionId]);
+
 
   useEffect(() => {
-    if (questionRef && question) {
-      updateDoc(questionRef, {
-        views: increment(1),
-      }).catch(console.error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questionId]); // Run only when the questionId changes
-
-  const authorRef = useMemoFirebase(() => {
-    if (!firestore || !question?.authorId) return null;
-    return doc(firestore, 'users', question.authorId);
-  }, [firestore, question?.authorId]);
-  const { data: author, isLoading: isLoadingAuthor } = useDoc<User>(authorRef);
-
-  const answersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, `questions/${questionId}/answers`);
-  }, [firestore, questionId]);
-  const { data: answers, isLoading: isLoadingAnswers } = useCollection<Answer>(answersQuery);
-
-  const relatedQuestionsQuery = useMemoFirebase(() => {
-    if (!firestore || !question?.tags || question.tags.length === 0) return null;
-    return query(
-      collection(firestore, 'questions'),
-      where('tags', 'array-contains-any', question.tags),
-      where('id', '!=', question.id),
-      limit(5)
-    );
-  }, [firestore, question?.tags, question?.id]);
-  const { data: relatedQuestions, isLoading: isLoadingRelated } = useCollection<Question>(relatedQuestionsQuery);
+    fetchData();
+  }, [fetchData]);
   
-  if (isLoadingQuestion) {
+  if (isLoading) {
     return (
       <div className="space-y-8">
         <Skeleton className="h-48 w-full" />
@@ -71,7 +63,7 @@ export function QuestionView({ questionId }: { questionId: string }) {
     <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
       <div className="md:col-span-3">
         <QuestionDetails question={question} author={author} />
-        {isLoadingAnswers ? <Skeleton className="h-64 w-full" /> : <AnswerSection answers={answers || []} question={question!} />}
+        <AnswerSection answers={answers || []} question={question} onAnswerPosted={fetchData} />
       </div>
       <aside className="space-y-8 md:col-span-1">
          <Card>
@@ -93,8 +85,7 @@ export function QuestionView({ questionId }: { questionId: string }) {
             </div>
           </CardContent>
         </Card>
-        {isLoadingRelated ? <Skeleton className="h-48 w-full" /> : (
-          relatedQuestions && relatedQuestions.length > 0 && (
+        {relatedQuestions && relatedQuestions.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline text-lg">Related Questions</CardTitle>
@@ -112,7 +103,6 @@ export function QuestionView({ questionId }: { questionId: string }) {
               </ul>
             </CardContent>
           </Card>
-          )
         )}
       </aside>
     </div>

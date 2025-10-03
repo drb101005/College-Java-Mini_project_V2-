@@ -3,12 +3,12 @@ import { AskQuestionForm } from '@/components/questions/ask-question-form';
 import { Footer } from '@/components/shared/footer';
 import { Header } from '@/components/shared/header';
 import { useAuth } from '@/contexts/auth-provider';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AskQuestionPage() {
   const { user, isUserLoading } = useAuth();
@@ -21,8 +21,8 @@ export default function AskQuestionPage() {
         title: 'Authentication Required',
         description: 'You need to be logged in to ask a question.',
         variant: 'destructive',
+        action: <Button asChild variant="secondary"><Link href="/login">Login</Link></Button>
       });
-      // No redirect, just show a message.
     }
   }, [user, isUserLoading, router, toast]);
 
