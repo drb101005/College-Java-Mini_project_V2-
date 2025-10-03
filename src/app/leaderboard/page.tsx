@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
 
   const sortedUsers = useMemo(() => {
     if (!users) return [];
-    return [...users].sort((a, b) => b.reputation - a.reputation);
+    return [...users].sort((a, b) => (b.reputation || 0) - (a.reputation || 0));
   }, [users]);
 
   const getRankColor = (rank: number) => {
@@ -79,7 +79,7 @@ export default function LeaderboardPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                         <p className="font-bold text-lg text-primary">{user.reputation.toLocaleString()}</p>
+                         <p className="font-bold text-lg text-primary">{(user.reputation || 0).toLocaleString()}</p>
                          <p className="text-sm text-muted-foreground">points</p>
                       </div>
                     </li>

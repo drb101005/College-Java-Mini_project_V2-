@@ -42,7 +42,7 @@ export default function Home() {
   const topContributors = useMemo(() => {
     if (!users) return [];
     return [...users]
-      .sort((a, b) => b.reputation - a.reputation)
+      .sort((a, b) => (b.reputation || 0) - (a.reputation || 0))
       .slice(0, 5);
   }, [users]);
   
@@ -127,7 +127,7 @@ export default function Home() {
                         </Avatar>
                         <div>
                           <p className="font-semibold">{user.name}</p>
-                          <p className="text-sm text-muted-foreground">{user.reputation} points</p>
+                          <p className="text-sm text-muted-foreground">{(user.reputation || 0)} points</p>
                         </div>
                       </li>
                     ))}
