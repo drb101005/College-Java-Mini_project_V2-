@@ -2,7 +2,7 @@
 
 import { createContext, useState, useContext, ReactNode, useMemo } from 'react';
 import type { User } from '@/lib/types';
-import { users } from '@/lib/data';
+import { mockUsers } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
 
   const login = (email: string) => {
-    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const foundUser = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (foundUser) {
       setUser(foundUser);
       toast({
