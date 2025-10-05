@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           <Logo />
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} NexusLearn. All rights reserved.
+            &copy; {new Date().getFullYear()} Student Query Hub. Made by Students of APSIT IT SE.
           </p>
           <div className="flex items-center gap-4">
             <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">
