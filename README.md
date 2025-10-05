@@ -1,4 +1,4 @@
-# NexusLearn - Student Discussion Forum
+# Student Discussion Forum
 
 NexusLearn is a full-stack web application built with Next.js, designed as a discussion forum where students and teachers can ask and answer academic or project-related questions. All data is mocked and runs locally without a database.
 
