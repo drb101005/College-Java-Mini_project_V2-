@@ -75,3 +75,4 @@ CREATE TABLE votes (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (answer_id) REFERENCES answers(id) ON DELETE CASCADE
 );
+ 
